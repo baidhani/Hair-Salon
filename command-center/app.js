@@ -8,54 +8,13 @@ const TABS = [
 const DAY = 86400000;
 let D = null;
 
-const SAMPLE = {
-  plan: {
-    project: { name: 'Sample Salon Booker', descriptor: 'Made-up example project used to show the shape of the Command Center.' },
-    schedule: { demo_day: '2026-01-15', build_end: '2026-01-08', demo_release_key: 'r0' },
-    releases: [
-      { key: 'r0', name: 'Sample release one', starts_on: '2026-01-01', ends_on: '2026-01-05', story_ids: ['S-1', 'S-2'], is_demo_target: true },
-      { key: 'r1', name: 'Sample release two', starts_on: '2026-01-06', ends_on: '2026-01-08', story_ids: ['S-3'], is_demo_target: false },
-    ],
-    stories: [
-      { id: 'S-1', title: 'Sample: create a booking', release: 'r0', narrative: 'As a sample owner, I want to add a booking, so that it is recorded.', due_on: '2026-01-04', due_baseline_on: '2026-01-03', owner_agent: 'Sample Owner', fulfills: ['R-1'] },
-      { id: 'S-2', title: 'Sample: approve a booking', release: 'r0', narrative: 'As a sample owner, I want to approve bookings.', due_on: '2026-01-05', due_baseline_on: '2026-01-05', owner_agent: 'Sample Owner', fulfills: ['R-2'] },
-      { id: 'S-3', title: 'Sample: send a confirmation', release: 'r1', narrative: 'As a sample manager, I want confirmations sent.', due_on: '2026-01-08', due_baseline_on: '2026-01-06', owner_agent: 'Sample Manager', fulfills: ['R-2'] },
-    ],
-    requirements: [
-      { id: 'R-1', kind: 'FUNC', priority: 'must', statement: 'Sample requirement: bookings can be created.', fulfilled_by: ['S-1'] },
-      { id: 'R-2', kind: 'FUNC', priority: 'must', statement: 'Sample requirement: nothing is sent unapproved.', fulfilled_by: ['S-2', 'S-3'] },
-    ],
-    agents: [],
-    derived: {
-      measures: [{ id: 'M-1', statement: 'Sample measure: fewer double-bookings' }],
-      guardrails: [{ id: 'R-2', statement: 'Sample guardrail: nothing is sent unapproved' }],
-      systems: ['Sample Mail System'], roles: ['sample owner', 'sample manager'],
-    },
-  },
-  progress: {
-    totals: { stories_total: 3, stories_verified: 1, criteria_total: 9, criteria_passed: 4, points_awarded: 120 },
-    stories: [
-      { id: 'S-1', verification: { state: 'verified' } },
-      { id: 'S-2', verification: { state: 'in_progress' } },
-      { id: 'S-3', verification: { state: 'not_started' } },
-    ],
-  },
-  manifest: null,
-};
-
-// A starting point for the data model, derived from the requirements. Shown as a proposal, not as built tables.
-const MODEL = [
-  ['Customer', 'REQ-002', ['id', 'name', 'email', 'phone', 'contact_verified_at'], 'Has many Bookings'],
-  ['Booking', 'REQ-001, REQ-003, REQ-004', ['id', 'customer_id', 'service', 'starts_at', 'status (draft / flagged / approved / confirmed)', 'review_reason'], 'Belongs to Customer; has many Confirmations'],
-  ['Confirmation', 'REQ-004, REQ-005', ['id', 'booking_id', 'approved_by', 'approved_at', 'sent_at', 'gmail_message_id'], 'Belongs to Booking'],
-  ['AvailabilitySlot', 'REQ-003', ['id', 'starts_at', 'ends_at', 'certainty (known / uncertain)'], 'Referenced by Booking checks'],
-];
+let SAMPLE = null, MODEL = [];
 
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const getJSON = async p => { const r = await fetch(p, { cache: 'no-store' }); if (!r.ok) throw new Error(p + ' → ' + r.status); return r.json(); };
 const sample = () => (localStorage.getItem('cc-mode') || 'real') === 'sample';
-const P = () => (sample() ? SAMPLE.plan : D.plan);
-const G = () => (sample() ? SAMPLE.progress : D.progress);
+const P = () => (sample() && SAMPLE ? SAMPLE.plan : D.plan);
+const G = () => (sample() && SAMPLE ? SAMPLE.progress : D.progress);
 const stateOf = id => { const s = (G().stories || []).find(x => x.id === id); return (s && s.verification && s.verification.state) || 'not_started'; };
 const stateLabel = s => ({ not_started: 'Not started', in_progress: 'In progress', submitted: 'Submitted', verified: 'Verified' }[s] || s);
 const card = (href, inner) => `<a class="card" href="${href}">${inner}</a>`;
@@ -228,12 +187,13 @@ function answer(q) {
 }
 
 function data(id) {
+  const reqText = r => { const q = (P().requirements || []).find(x => x.id === r); return `<li><a href="#/knowledge/${esc(r)}">${esc(r)}</a>${q ? ' — ' + esc(q.statement) : ''}</li>`; };
   if (id) {
-    const m = MODEL.find(x => x[0] === id);
-    return back('data', 'Data model') + (m ? `<h2>${esc(m[0])}</h2><p class="muted">From ${esc(m[1])} · ${esc(m[3])}</p><ul>${m[2].map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : empty('Not found', 'No such table.'));
+    const m = MODEL.find(x => x.name === id);
+    return back('data', 'Data model') + (m ? `<h2>${esc(m.name)}</h2><p class="muted">${esc(m.relations)}</p><ul>${m.fields.map(f => `<li>${esc(f)}</li>`).join('')}</ul><h3>Requirements</h3><ul>${m.requirements.map(reqText).join('')}</ul>` : empty('Not found', 'No such table.'));
   }
   return `<h2>Data model</h2><div class="banner">Proposed model, derived from your requirements — not built. Review it before any table is created.</div>${sampleBanner()}` +
-    grid(MODEL.map(m => card('#/data/' + m[0], `<strong>${esc(m[0])}</strong><div class="l">${m[2].length} fields · ${esc(m[1])}</div><div class="l">${esc(m[3])}</div>`)));
+    (sample() ? '' : '') + (MODEL.length ? grid(MODEL.map(m => card('#/data/' + m.name, `<strong>${esc(m.name)}</strong><div class="l">${m.fields.length} fields · ${esc(m.requirements.join(', '))}</div><div class="l">${esc(m.relations)}</div>`))) : empty('No data model yet', 'Nothing in .colaberry/data-model.json.'));
 }
 
 const VIEWS = { overview, outcomes, users, guardrails, systems, projects, agents, knowledge, data };
@@ -256,8 +216,10 @@ async function init() {
   m.onchange = () => { try { localStorage.setItem('cc-mode', m.value); } catch (e) {} render(); };
   window.addEventListener('hashchange', render);
   try {
-    const [plan, progress, manifest] = await Promise.all([
-      getJSON('.colaberry/plan.json'), getJSON('.colaberry/progress.json'), getJSON('.colaberry/manifest.json').catch(() => null)]);
+    const [plan, progress, manifest, sm, dm] = await Promise.all([
+      getJSON('.colaberry/plan.json'), getJSON('.colaberry/progress.json'), getJSON('.colaberry/manifest.json').catch(() => null),
+      getJSON('command-center/sample.json').catch(() => null), getJSON('.colaberry/data-model.json').catch(() => null)]);
+    SAMPLE = sm; MODEL = (dm && dm.tables) || [];
     D = { plan, progress, manifest };
     document.getElementById('proj').textContent = plan.project.name + ' — Command Center';
     render();
