@@ -1,5 +1,4 @@
 // Command Center. All plan content is read at runtime from .colaberry/*.json — nothing about the plan is typed in here.
-// Only SAMPLE (clearly labelled made-up data) and MODEL (a proposed data model) live in this file.
 const TABS = [
   ['overview', 'Overview'], ['outcomes', 'Outcomes'], ['users', 'Users and use case'],
   ['guardrails', 'Guardrails'], ['systems', 'Systems'], ['projects', 'Project management'],
@@ -8,7 +7,7 @@ const TABS = [
 const DAY = 86400000;
 let D = null;
 
-let SAMPLE = null, MODEL = [];
+let SAMPLE = null;
 
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const getJSON = async p => { const r = await fetch(p, { cache: 'no-store' }); if (!r.ok) throw new Error(p + ' → ' + r.status); return r.json(); };
@@ -187,13 +186,19 @@ function answer(q) {
 }
 
 function data(id) {
-  const reqText = r => { const q = (P().requirements || []).find(x => x.id === r); return `<li><a href="#/knowledge/${esc(r)}">${esc(r)}</a>${q ? ' — ' + esc(q.statement) : ''}</li>`; };
+  const plan = P(), reqs = plan.requirements || [], stories = plan.stories || [];
+  const storiesFor = r => stories.filter(s => (r.fulfilled_by || []).includes(s.id));
   if (id) {
-    const m = MODEL.find(x => x.name === id);
-    return back('data', 'Data model') + (m ? `<h2>${esc(m.name)}</h2><p class="muted">${esc(m.relations)}</p><ul>${m.fields.map(f => `<li>${esc(f)}</li>`).join('')}</ul><h3>Requirements</h3><ul>${m.requirements.map(reqText).join('')}</ul>` : empty('Not found', 'No such table.'));
+    const r = reqs.find(x => x.id === id);
+    if (!r) return back('data', 'Data model') + empty('Not found', 'No such requirement.');
+    const ss = storiesFor(r);
+    return back('data', 'Data model') + `<h2>${esc(r.id)}</h2><p>${esc(r.statement)}</p>
+      ${empty('Tables and fields not defined', 'The plan does not say what this requirement must store. Define it with your instructor before any table is created.')}
+      <h3>What the plan says about the data</h3>
+      ${ss.map(s => `<div class="card"><a href="#/projects/${esc(s.id)}"><strong>${esc(s.id)}</strong> ${esc(s.title)}</a><p class="muted">${esc(s.task_guidance)}</p>${(s.failure_paths || []).length ? '<div class="l">Failure paths: ' + s.failure_paths.map(esc).join('; ') + '</div>' : ''}</div>`).join('') || '<p class="muted">No story covers this requirement.</p>'}`;
   }
-  return `<h2>Data model</h2><div class="banner">Proposed model, derived from your requirements — not built. Review it before any table is created.</div>${sampleBanner()}` +
-    (sample() ? '' : '') + (MODEL.length ? grid(MODEL.map(m => card('#/data/' + m.name, `<strong>${esc(m.name)}</strong><div class="l">${m.fields.length} fields · ${esc(m.requirements.join(', '))}</div><div class="l">${esc(m.relations)}</div>`))) : empty('No data model yet', 'Nothing in .colaberry/data-model.json.'));
+  return `<h2>Data model</h2>${sampleBanner()}<div class="banner">Your plan lists requirements but defines no tables or fields yet. Each card is a requirement that will need stored data. Nothing is invented here.</div>` +
+    (reqs.length ? grid(reqs.map(r => card('#/data/' + r.id, `<strong>${esc(r.id)}</strong> <span class="l">${esc(r.kind)}${r.cluster ? ' · ' + esc(r.cluster) : ''}</span><p>${esc(r.statement)}</p><div class="l">Tables: not defined yet</div>`))) : empty('No requirements', 'The plan has no requirements.'));
 }
 
 const VIEWS = { overview, outcomes, users, guardrails, systems, projects, agents, knowledge, data };
@@ -216,10 +221,10 @@ async function init() {
   m.onchange = () => { try { localStorage.setItem('cc-mode', m.value); } catch (e) {} render(); };
   window.addEventListener('hashchange', render);
   try {
-    const [plan, progress, manifest, sm, dm] = await Promise.all([
+    const [plan, progress, manifest, sm] = await Promise.all([
       getJSON('.colaberry/plan.json'), getJSON('.colaberry/progress.json'), getJSON('.colaberry/manifest.json').catch(() => null),
-      getJSON('command-center/sample.json').catch(() => null), getJSON('.colaberry/data-model.json').catch(() => null)]);
-    SAMPLE = sm; MODEL = (dm && dm.tables) || [];
+      getJSON('command-center/sample.json').catch(() => null)]);
+    SAMPLE = sm;
     D = { plan, progress, manifest };
     document.getElementById('proj').textContent = plan.project.name + ' — Command Center';
     render();
