@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New booking</title>
+<style>
+  body{font:16px/1.5 system-ui,sans-serif;max-width:420px;margin:2rem auto;padding:0 1rem}
+  label{display:block;margin-top:.8rem}input{width:100%;padding:.4rem;box-sizing:border-box}
+  .err{color:#b00020;font-size:.9rem}.ok{color:#0a6b2d}button{margin-top:1rem;padding:.5rem 1rem}
+</style>
+</head>
+<body>
+<h1>New booking</h1>
+<form id="f" novalidate>
+  <label>Customer name <input name="name" autocomplete="off"></label><div class="err" data-for="name"></div>
+  <label>Email <input name="email" type="email" autocomplete="off"></label><div class="err" data-for="email"></div>
+  <label>Phone <input name="phone" type="tel" autocomplete="off"></label><div class="err" data-for="phone"></div>
+  <button>Verify and confirm booking</button>
+</form>
+<p id="msg" role="status"></p>
+<script>
+const f = document.getElementById('f'), msg = document.getElementById('msg');
+// A new requestId per edited form; a retry after a network failure reuses it, so nothing is booked twice.
+let requestId = crypto.randomUUID();
+f.addEventListener('input', () => { requestId = crypto.randomUUID(); });
+
+f.addEventListener('submit', async e => {
+  e.preventDefault();
+  document.querySelectorAll('.err').forEach(d => { d.textContent = ''; });
+  msg.className = ''; msg.textContent = 'Verifying…';
+  const contact = Object.fromEntries(new FormData(f));
+  try {
+    const res = await fetch('/bookings', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestId, contact }),
+    });
+    const r = await res.json();
+    if (r.status === 'confirmed') { msg.className = 'ok'; msg.textContent = 'Booking confirmed for ' + r.booking.name + '.'; }
+    else if (r.status === 'rejected') {
+      r.errors.forEach(x => { const d = document.querySelector('[data-for="' + x.field + '"]'); if (d) d.textContent = x.message; });
+      msg.className = 'err'; msg.textContent = 'Please correct the details above. The booking was not confirmed.';
+    } else { msg.className = 'err'; msg.textContent = r.message || 'Something went wrong. Please try again.'; }
+  } catch {
+    msg.className = 'err'; msg.textContent = 'Could not reach the server. Nothing was booked — please try again.';
+  }
+});
+</script>
+</body>
+</html>

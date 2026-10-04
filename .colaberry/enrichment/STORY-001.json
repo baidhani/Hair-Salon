@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1",
+  "projectId": "b2d8c0b3-23bb-4bc2-9851-078254bba1ff",
+  "storyId": "STORY-001",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-10-04T22:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "outputs",
+      "value": "A booking is confirmed only when name, email and phone pass format checks; otherwise it is rejected with the failed fields named.",
+      "evidence": "src/bookings.js"
+    },
+    {
+      "dimension": "security_context",
+      "value": "The audit log stores only the request id, time, outcome and failed field names, never the email or phone.",
+      "evidence": "src/audit.js"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Contact verification is a local format check; no external verification service is called.",
+      "rationale": "The story names no external service, and none was available to test against.",
+      "evidence": "src/verify.js"
+    },
+    {
+      "statement": "Bookings, verification and audit entries are idempotent on a client-supplied requestId, and a failed or timed-out verifier blocks the booking.",
+      "rationale": "Repeated submits and network errors must not double-book or confirm unverified contacts.",
+      "evidence": "tests/bookings.test.js"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Bookings are held in memory only and are lost on restart; only the audit log is persisted.",
+      "evidence": "src/bookings.js"
+    },
+    {
+      "statement": "Verification checks format only; it cannot tell whether an email address or phone number actually belongs to the customer.",
+      "evidence": "src/verify.js"
+    }
+  ],
+  "demonstrationEvidence": [
+    { "kind": "test", "ref": "tests/bookings.test.js" },
+    { "kind": "test", "ref": "tests/server.test.js" },
+    { "kind": "test", "ref": "tests/audit.test.js" }
+  ],
+  "measurementEvents": []
+}
