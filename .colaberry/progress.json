@@ -3,13 +3,13 @@
   "project": "Hair Salon Booking Manager",
   "totals": {
     "stories_total": 6,
-    "stories_verified": 2,
+    "stories_verified": 3,
     "stories_submitted": 0,
-    "stories_in_progress": 4,
+    "stories_in_progress": 3,
     "stories_not_started": 0,
     "criteria_total": 20,
-    "criteria_passed": 8,
-    "points_awarded": 1103
+    "criteria_passed": 11,
+    "points_awarded": 1236
   },
   "stories": [
     {
@@ -149,19 +149,15 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 130,
-        "outstanding": [
-          "Given prepared bookings, When I review them, Then I can approve or edit before sending.",
-          "Given a booking error, When I review, Then I can correct it before approval.",
-          "Trust: Given a booking review, When approved, Then the approval is logged."
-        ]
+        "verified_at": "2026-10-04T21:24:41.133Z",
+        "commit_sha": "849ef9eeb43eeea0bcaf010212df244edca14738",
+        "commit_url": "https://github.com/baidhani/Hair-Salon/commit/849ef9eeb43eeea0bcaf010212df244edca14738",
+        "commit_at": "2026-10-04T21:23:26Z",
+        "points_awarded": 263,
+        "outstanding": []
       }
     },
     {
