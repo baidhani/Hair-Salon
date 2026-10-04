@@ -1,5 +1,6 @@
 'use strict';
 const fs = require('node:fs');
+const { randomUUID } = require('node:crypto');
 
 // Append-only audit log of contact verifications.
 // Each entry is keyed by requestId, so recording the same request twice does not duplicate it.
@@ -56,7 +57,19 @@ function createAuditLog({ file, now = () => new Date() } = {}) {
     return entry;
   }
 
-  return { record, recordApproval, recordSend, entries: () => entries.slice() };
+  // One entry per UI interaction. Only the event name and an optional booking id are kept, never contact details.
+  // Unlike the entries above these are not deduplicated: each interaction really happened.
+  function recordUiEvent({ event, bookingId }) {
+    if (!event) throw new Error('event is required');
+    const entry = { requestId: 'ui:' + randomUUID(), type: 'ui_event', event, at: now().toISOString() };
+    if (bookingId) entry.bookingId = bookingId;
+    if (file) fs.appendFileSync(file, JSON.stringify(entry) + '\n');
+    entries.push(entry);
+    seen.add(entry.requestId);
+    return entry;
+  }
+
+  return { record, recordApproval, recordSend, recordUiEvent, entries: () => entries.slice() };
 }
 
 module.exports = { createAuditLog };

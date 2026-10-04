@@ -26,6 +26,9 @@ function readJSON(req) {
   });
 }
 
+// Shared front-end files. A fixed list, so no other file in the folder can be requested.
+const ASSETS = { '/ui.js': ['ui.js', 'text/javascript'], '/ui.css': ['ui.css', 'text/css'] };
+
 const page = (res, name) => {
   res.writeHead(200, { 'Content-Type': 'text/html' });
   res.end(fs.readFileSync(path.join(__dirname, 'public', name)));
@@ -58,8 +61,35 @@ async function reviewApi(req, res, review, confirmer) {
   send(res, 404, { status: 'not_found' });
 }
 
-function createServer(bookings, review, confirmer) {
+// The only interactions the pages may report. Anything else is refused, so the log cannot be filled with arbitrary text.
+const UI_EVENTS = new Set([
+  'booking_form_submitted', 'booking_edited', 'booking_approved',
+  'confirmation_send_clicked', 'review_page_opened', 'ui_error_shown',
+]);
+const BOOKING_ID = /^[\w-]{1,64}$/;
+
+async function uiEventApi(req, res, log) {
+  if (!log) return send(res, 404, { status: 'not_found' });
+  let body;
+  try { body = await readJSON(req); } catch { return send(res, 400, { status: 'bad_request', message: 'Invalid request.' }); }
+  if (!body || !UI_EVENTS.has(body.event) || (body.bookingId != null && !BOOKING_ID.test(body.bookingId))) {
+    return send(res, 400, { status: 'bad_request', message: 'Unknown event.' });
+  }
+  try {
+    log.recordUiEvent({ event: body.event, bookingId: body.bookingId });
+    return send(res, 201, { status: 'logged' });
+  } catch {
+    return send(res, 500, { status: 'error', message: 'The interaction could not be logged.' });
+  }
+}
+
+function createServer(bookings, review, confirmer, log) {
   return http.createServer(async (req, res) => {
+    if (req.method === 'GET' && ASSETS[req.url]) {
+      res.writeHead(200, { 'Content-Type': ASSETS[req.url][1] });
+      return res.end(fs.readFileSync(path.join(__dirname, 'public', ASSETS[req.url][0])));
+    }
+    if (req.method === 'POST' && req.url === '/api/ui-events') return uiEventApi(req, res, log);
     if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) return page(res, 'index.html');
     if (req.method === 'GET' && (req.url === '/review' || req.url === '/review.html')) return page(res, 'review.html');
     if (req.url.startsWith('/api/review')) return reviewApi(req, res, review, confirmer);
@@ -90,7 +120,7 @@ if (require.main === module) {
     console.warn(err.message + ' — confirmations cannot be sent until it is set.');
   }
   const port = process.env.PORT || 3000;
-  createServer(bookings, review, confirmer).listen(port, () => console.log(`Booking manager on http://localhost:${port}`));
+  createServer(bookings, review, confirmer, log).listen(port, () => console.log(`Booking manager on http://localhost:${port}`));
 }
 
 module.exports = { createServer };

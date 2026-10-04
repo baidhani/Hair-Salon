@@ -4,46 +4,70 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>New booking</title>
-<style>
-  body{font:16px/1.5 system-ui,sans-serif;max-width:420px;margin:2rem auto;padding:0 1rem}
-  label{display:block;margin-top:.8rem}input{width:100%;padding:.4rem;box-sizing:border-box}
-  .err{color:#b00020;font-size:.9rem}.ok{color:#0a6b2d}button{margin-top:1rem;padding:.5rem 1rem}
-</style>
+<link rel="stylesheet" href="/ui.css">
 </head>
 <body>
-<h1>New booking</h1>
-<form id="f" novalidate>
-  <label>Customer name <input name="name" autocomplete="off"></label><div class="err" data-for="name"></div>
-  <label>Email <input name="email" type="email" autocomplete="off"></label><div class="err" data-for="email"></div>
-  <label>Phone <input name="phone" type="tel" autocomplete="off"></label><div class="err" data-for="phone"></div>
-  <button>Verify and confirm booking</button>
-</form>
-<p id="msg" role="status"></p>
-<p><a href="/review">Review prepared bookings →</a></p>
+<header class="site">
+  <strong>Salon bookings</strong>
+  <a href="/" aria-current="page">New booking</a>
+  <a href="/review">Review &amp; send</a>
+</header>
+<main>
+  <h1>New booking</h1>
+  <p class="hint">Enter the customer's details. We check them before the booking is prepared. Nothing is emailed until you approve it on the Review page.</p>
+  <div id="feedback" class="feedback" aria-live="polite"></div>
+  <form id="f" class="card" novalidate>
+    <label for="name">Customer name</label>
+    <input id="name" name="name" autocomplete="off" aria-describedby="e-name">
+    <div class="field-error" id="e-name"></div>
+    <label for="email">Email <span class="hint">(the confirmation is sent here)</span></label>
+    <input id="email" name="email" type="email" autocomplete="off" aria-describedby="e-email">
+    <div class="field-error" id="e-email"></div>
+    <label for="phone">Phone</label>
+    <input id="phone" name="phone" type="tel" autocomplete="off" aria-describedby="e-phone">
+    <div class="field-error" id="e-phone"></div>
+    <button class="primary" id="submit">Check details and prepare booking</button>
+  </form>
+</main>
+<script src="/ui.js"></script>
 <script>
-const f = document.getElementById('f'), msg = document.getElementById('msg');
+UI.installErrorHandler();
+const f = document.getElementById('f'), submit = document.getElementById('submit');
 // A new requestId per edited form; a retry after a network failure reuses it, so nothing is booked twice.
 let requestId = crypto.randomUUID();
 f.addEventListener('input', () => { requestId = crypto.randomUUID(); });
 
+function showFieldErrors(errors) {
+  for (const k of ['name', 'email', 'phone']) {
+    const found = errors.find(e => e.field === k);
+    document.getElementById('e-' + k).textContent = found ? found.message : '';
+    document.getElementById(k).setAttribute('aria-invalid', found ? 'true' : 'false');
+  }
+  const first = errors[0] && document.getElementById(errors[0].field);
+  if (first) first.focus();
+}
+
 f.addEventListener('submit', async e => {
   e.preventDefault();
-  document.querySelectorAll('.err').forEach(d => { d.textContent = ''; });
-  msg.className = ''; msg.textContent = 'Verifying…';
-  const contact = Object.fromEntries(new FormData(f));
+  showFieldErrors([]);
+  submit.disabled = true;
+  UI.notify('info', 'Checking the details…');
+  UI.logEvent('booking_form_submitted');
   try {
-    const res = await fetch('/bookings', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ requestId, contact }),
-    });
-    const r = await res.json();
-    if (r.status === 'confirmed') { msg.className = 'ok'; msg.textContent = 'Booking confirmed for ' + r.booking.name + '.'; }
-    else if (r.status === 'rejected') {
-      r.errors.forEach(x => { const d = document.querySelector('[data-for="' + x.field + '"]'); if (d) d.textContent = x.message; });
-      msg.className = 'err'; msg.textContent = 'Please correct the details above. The booking was not confirmed.';
-    } else { msg.className = 'err'; msg.textContent = r.message || 'Something went wrong. Please try again.'; }
-  } catch {
-    msg.className = 'err'; msg.textContent = 'Could not reach the server. Nothing was booked — please try again.';
+    const { status, data } = await UI.request('POST', '/bookings', { requestId, contact: Object.fromEntries(new FormData(f)) });
+    if (data.status === 'confirmed') {
+      UI.notify('success', 'Details verified for ' + data.booking.name + '. The booking is waiting for your review — nothing has been emailed yet.');
+      f.reset(); requestId = crypto.randomUUID();
+    } else if (data.status === 'rejected') {
+      showFieldErrors(data.errors);
+      UI.notify('error', 'Please correct the highlighted details. The booking was not prepared.');
+    } else {
+      UI.notify('error', data.message || 'Something went wrong (code ' + status + '). Nothing was booked — please try again.');
+    }
+  } catch (err) {
+    UI.notify('error', err.message);
+  } finally {
+    submit.disabled = false;
   }
 });
 </script>

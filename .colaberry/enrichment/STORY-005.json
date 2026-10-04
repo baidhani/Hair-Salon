@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1",
+  "projectId": "b2d8c0b3-23bb-4bc2-9851-078254bba1ff",
+  "storyId": "STORY-005",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-10-05T02:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "approval_points",
+      "value": "The owner is asked to confirm before approving a booking and before sending a confirmation email; sending is described as not undoable.",
+      "evidence": "src/public/review.html"
+    },
+    {
+      "dimension": "security_context",
+      "value": "UI interactions are logged by event name, timestamp and optional booking id only; only a fixed list of event names is accepted and no contact details are stored.",
+      "evidence": "tests/server.test.js"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "The 'intuitive and user-friendly' criterion was replaced by checkable usability rules: visible feedback for every action, confirmation before irreversible steps, status badges, shared navigation, helpful empty states and labelled, keyboard-reachable fields.",
+      "rationale": "'Intuitive' cannot be verified by an automated test.",
+      "evidence": "src/public/ui.css"
+    },
+    {
+      "statement": "If the on-page feedback area fails, the UI falls back to a browser alert so a failure is never silent; interaction logging is fire-and-forget and never blocks the owner.",
+      "rationale": "Covers the feedback-mechanism failure path without making logging a point of failure for the user.",
+      "evidence": "tests/ui.test.js"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Whether the interface is actually intuitive has not been judged by a person; the pages were only smoke-tested in headless Chrome for load and script errors, and the click-through (approve, send, confirm prompts) was not exercised in a real browser.",
+      "evidence": "src/public/review.html"
+    },
+    {
+      "statement": "Confirmation prompts use the browser's built-in confirm dialog, which is plain and not styled.",
+      "evidence": "src/public/review.html"
+    }
+  ],
+  "demonstrationEvidence": [
+    { "kind": "test", "ref": "tests/ui.test.js" },
+    { "kind": "test", "ref": "tests/server.test.js" }
+  ],
+  "measurementEvents": []
+}

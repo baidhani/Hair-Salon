@@ -84,7 +84,7 @@ test('approval returns 500 and stays prepared when logging fails', () => withRev
 
 test('unknown booking is 404; review page is served', () => withReview({}, async url => {
   assert.strictEqual((await send(url + '/api/review/nope/approve', 'POST')).status, 404);
-  assert.match(await (await fetch(url + '/review')).text(), /Review prepared bookings/);
+  assert.match(await (await fetch(url + '/review')).text(), /Review and send/);
 }));
 
 // ---- STORY-004: sending confirmations ----
@@ -132,4 +132,51 @@ test('503 with a clear message when Gmail is not configured', () => withSender(n
   const res = await send(url + '/api/review/' + id + '/send', 'POST');
   assert.strictEqual(res.status, 503);
   assert.match((await res.json()).message, /not configured/);
+}));
+
+// ---- STORY-005: UI interaction log ----
+async function withUiLog(log, fn) {
+  const server = createServer(createBookings({ log }), null, null, log);
+  await new Promise(r => server.listen(0, r));
+  const url = 'http://localhost:' + server.address().port;
+  try { await fn(url); } finally { server.close(); }
+}
+
+test('logs a known UI interaction with a timestamp and no contact details', () => {
+  const log = createAuditLog();
+  return withUiLog(log, async url => {
+    const res = await send(url + '/api/ui-events', 'POST', { event: 'booking_approved', bookingId: 'booking-r1' });
+    assert.strictEqual(res.status, 201);
+    const e = log.entries().find(x => x.type === 'ui_event');
+    assert.deepStrictEqual([e.event, e.bookingId], ['booking_approved', 'booking-r1']);
+    assert.ok(e.at);
+  });
+});
+
+test('refuses unknown events and malformed booking ids', () => {
+  const log = createAuditLog();
+  return withUiLog(log, async url => {
+    assert.strictEqual((await send(url + '/api/ui-events', 'POST', { event: 'drop table' })).status, 400);
+    assert.strictEqual((await send(url + '/api/ui-events', 'POST', { event: 'booking_approved', bookingId: 'sam@example.com' })).status, 400);
+    assert.strictEqual(log.entries().length, 0);
+  });
+});
+
+test('500 with a message when the interaction cannot be logged', () => withUiLog({ recordUiEvent() { throw new Error('disk'); }, record() {} }, async url => {
+  assert.strictEqual((await send(url + '/api/ui-events', 'POST', { event: 'review_page_opened' })).status, 500);
+}));
+
+test('the same interaction twice is logged twice (each really happened)', () => {
+  const log = createAuditLog();
+  return withUiLog(log, async url => {
+    await send(url + '/api/ui-events', 'POST', { event: 'review_page_opened' });
+    await send(url + '/api/ui-events', 'POST', { event: 'review_page_opened' });
+    assert.strictEqual(log.entries().filter(e => e.type === 'ui_event').length, 2);
+  });
+});
+
+test('serves the shared UI files, and nothing else from the public folder', () => withServer({}, async url => {
+  assert.match((await fetch(url + '/ui.css')).headers.get('content-type'), /css/);
+  assert.match((await fetch(url + '/ui.js')).headers.get('content-type'), /javascript/);
+  assert.strictEqual((await fetch(url + '/server.js')).status, 404);
 }));

@@ -1,0 +1,31 @@
+/* Shared look for the booking pages. Change the colours here only. */
+:root{--brand:#7a4b8f;--ink:#241b2b;--muted:#6f6577;--line:#e4dde9;--bg:#faf8fb;--card:#fff;
+  --ok:#0a6b2d;--okbg:#e6f4ea;--err:#b00020;--errbg:#fdecee;--warn:#8a5a00;--warnbg:#fff4d6}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+header.site{background:var(--card);border-bottom:1px solid var(--line);padding:.6rem 1rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+header.site strong{color:var(--brand)}
+header.site a{color:var(--ink);text-decoration:none;padding:.25rem .6rem;border-radius:6px}
+header.site a[aria-current="page"]{background:var(--brand);color:#fff}
+main{max-width:620px;margin:0 auto;padding:1rem}
+h1{font-size:1.4rem;margin:.5rem 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:.9rem;margin:.8rem 0}
+label{display:block;margin-top:.6rem;font-weight:600}
+input{width:100%;padding:.5rem;font:inherit;border:1px solid var(--line);border-radius:6px;margin-top:.2rem}
+input:focus,button:focus-visible,a:focus-visible{outline:3px solid var(--brand);outline-offset:1px}
+input[aria-invalid="true"]{border-color:var(--err)}
+.hint{color:var(--muted);font-size:.9rem;font-weight:400}
+.field-error{color:var(--err);font-size:.9rem;min-height:1.2em}
+button{font:inherit;padding:.5rem 1rem;margin:.6rem .5rem 0 0;border-radius:6px;border:1px solid var(--brand);background:var(--card);color:var(--brand);cursor:pointer}
+button.primary{background:var(--brand);color:#fff}
+button:disabled{opacity:.6;cursor:progress}
+.feedback{min-height:0;border-radius:8px;padding:0}
+.feedback.success,.feedback.error,.feedback.info{padding:.6rem .8rem;margin:.8rem 0}
+.feedback.success{background:var(--okbg);color:var(--ok)}
+.feedback.error{background:var(--errbg);color:var(--err)}
+.feedback.info{background:var(--warnbg);color:var(--warn)}
+.badge{display:inline-block;padding:.1rem .6rem;border-radius:999px;font-size:.8rem;font-weight:600}
+.badge.prepared{background:var(--warnbg);color:var(--warn)}
+.badge.approved{background:#e3ecff;color:#1d3f9e}
+.badge.sent{background:var(--okbg);color:var(--ok)}
+.empty{color:var(--muted);text-align:center;padding:1rem}
