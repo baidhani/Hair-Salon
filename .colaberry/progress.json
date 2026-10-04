@@ -3,13 +3,13 @@
   "project": "Hair Salon Booking Manager",
   "totals": {
     "stories_total": 6,
-    "stories_verified": 3,
+    "stories_verified": 4,
     "stories_submitted": 0,
-    "stories_in_progress": 3,
+    "stories_in_progress": 2,
     "stories_not_started": 0,
     "criteria_total": 20,
-    "criteria_passed": 11,
-    "points_awarded": 1236
+    "criteria_passed": 14,
+    "points_awarded": 1369
   },
   "stories": [
     {
@@ -183,19 +183,15 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 130,
-        "outstanding": [
-          "Given a confirmed booking, when I send a confirmation, then the customer receives an email via Gmail.",
-          "Given a booking without an email address, when I attempt to send a confirmation, then I receive an error message.",
-          "Trust: Every sent confirmation is logged with a timestamp and booking ID."
-        ]
+        "verified_at": "2026-10-04T21:30:47.186Z",
+        "commit_sha": "86a8c54634f6ded58694b8ddf94ce247536e2215",
+        "commit_url": "https://github.com/baidhani/Hair-Salon/commit/86a8c54634f6ded58694b8ddf94ce247536e2215",
+        "commit_at": "2026-10-04T21:30:38Z",
+        "points_awarded": 263,
+        "outstanding": []
       }
     },
     {
