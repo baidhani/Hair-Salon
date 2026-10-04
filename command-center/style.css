@@ -1,0 +1,29 @@
+/* Brand colours live here only — change them in one place. */
+:root{--brand:#7a4b8f;--bg:#faf8fb;--ink:#241b2b;--muted:#6f6577;--card:#fff;--line:#e4dde9;--warn:#b45309;--warnbg:#fef3c7;--grey:#9a9aa3}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:12px 16px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:1.3rem;color:var(--brand)}
+.stamp{font-size:.9rem;color:var(--muted);margin:4px 0 8px}
+.stamp.warn{background:var(--warnbg);color:var(--warn);padding:4px 8px;border-radius:6px}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav a{padding:5px 10px;border-radius:6px;text-decoration:none;color:var(--ink);border:1px solid var(--line);font-size:.9rem}
+nav a.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+main{max-width:960px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:12px 0}
+.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;text-decoration:none;color:inherit}
+a.card:hover{border-color:var(--brand)}
+.card .n{font-size:1.8rem;font-weight:700;color:var(--brand)}
+.card .l{color:var(--muted);font-size:.9rem}
+.banner{background:var(--warnbg);color:var(--warn);border:1px solid #f3d27a;border-radius:8px;padding:10px 14px;margin-bottom:12px}
+.sample{background:#e0f2fe;color:#075985;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-weight:600}
+.muted{color:var(--muted)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px;text-align:left}
+.back{display:inline-block;margin-bottom:8px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--grey)}
+.gantt .row{display:flex;align-items:center;gap:8px;margin:4px 0}.rl{width:230px;font-size:.85rem}
+.track{position:relative;flex:1;height:26px;background:#f1ecf4;border-radius:6px}
+.bar{position:absolute;top:3px;bottom:3px;background:#b9a3c6;border-radius:4px;color:#fff;font-size:.75rem;text-align:center;text-decoration:none;min-width:24px}
+.bar.demo{background:var(--brand)}.demoline{position:absolute;top:0;bottom:0;width:2px;background:var(--warn)}
+form{display:flex;gap:6px;margin:8px 0}input{flex:1;padding:6px}pre{white-space:pre-wrap}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1",
+  "projectId": "b2d8c0b3-23bb-4bc2-9851-078254bba1ff",
+  "storyId": "STORY-000",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-10-04T21:30:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "systems",
+      "value": "Gmail is listed as a planned system, but its connection status is not checked anywhere; the Command Center shows it grey as 'not checked from here'.",
+      "evidence": "command-center/app.js#systems"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "The Command Center is a static page (index.html plus command-center/) that fetches .colaberry/*.json at runtime.",
+      "rationale": "GitHub Pages serves only the repo root or docs/, and docs/ is rewritten on every sync.",
+      "evidence": "index.html"
+    },
+    {
+      "statement": "Agents tab lists story owners (Salon Owner, Booking Manager) because plan.agents is empty, and says so on screen.",
+      "rationale": "A job title is not a scoped AI agent.",
+      "evidence": "command-center/app.js#agents"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "The Data model tab is a proposed model hard-coded in the page, not derived from plan.json; no tables exist yet.",
+      "evidence": "command-center/app.js#MODEL"
+    },
+    {
+      "statement": "No outcome measures or guardrails exist in the plan, so those tabs show empty states.",
+      "evidence": "command-center/app.js#outcomes"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "file",
+      "ref": "index.html"
+    }
+  ],
+  "measurementEvents": []
+}
