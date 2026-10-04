@@ -1,0 +1,338 @@
+{
+  "schema_version": 2,
+  "project_name": "Hair Salon Booking Manager",
+  "descriptor": "A simple web-based booking management system for salon owners, integrating with Gmail for communication and ensuring correct customer contact information.",
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "kind": "FUNC",
+      "cluster": "UI",
+      "priority": "must",
+      "statement": "The system must provide a web-based UI for salon owners to manage bookings.",
+      "from_dimensions": [
+        "desired_outcome",
+        "actors"
+      ],
+      "fulfilled_by": [
+        "STORY-001",
+        "STORY-005"
+      ]
+    },
+    {
+      "id": "REQ-002",
+      "kind": "FUNC",
+      "cluster": "Booking Verification",
+      "priority": "must",
+      "statement": "The system must verify correct customer contact information before confirming a booking.",
+      "from_dimensions": [
+        "approval_points"
+      ],
+      "fulfilled_by": [
+        "STORY-001"
+      ]
+    },
+    {
+      "id": "REQ-003",
+      "kind": "FUNC",
+      "cluster": "Booking Verification",
+      "priority": "must",
+      "statement": "The system must flag bookings for manual review when availability is uncertain.",
+      "from_dimensions": [
+        "exceptions"
+      ],
+      "fulfilled_by": [
+        "STORY-002"
+      ]
+    },
+    {
+      "id": "REQ-004",
+      "kind": "FUNC",
+      "cluster": "Booking Review",
+      "priority": "must",
+      "statement": "The system must show all prepared bookings to the salon owner before sending confirmations.",
+      "from_dimensions": [
+        "success_definition"
+      ],
+      "fulfilled_by": [
+        "STORY-003",
+        "STORY-004"
+      ]
+    },
+    {
+      "id": "REQ-005",
+      "kind": "CONSTRAINT",
+      "cluster": "Integrations",
+      "priority": "must",
+      "statement": "The system must integrate with Gmail for sending booking confirmations.",
+      "from_dimensions": [
+        "systems"
+      ],
+      "fulfilled_by": [
+        "STORY-004"
+      ]
+    }
+  ],
+  "releases": [
+    {
+      "key": "r0",
+      "demo": "Show a booking being created, verified, flagged for review, and displayed for owner approval before sending via Gmail.",
+      "goal": "Establish the basic booking management system with verification and review features.",
+      "name": "Initial Setup and Verification",
+      "week_end": 1,
+      "week_start": 1,
+      "story_ids": [
+        "STORY-001",
+        "STORY-003"
+      ],
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-01",
+      "is_demo_target": true
+    },
+    {
+      "key": "r1",
+      "demo": "Demonstrate enhanced booking management capabilities with improved UI and error handling.",
+      "goal": "Improve the booking management process with additional features and optimizations.",
+      "name": "Enhanced Booking Management",
+      "week_end": 2,
+      "week_start": 2,
+      "story_ids": [
+        "STORY-004",
+        "STORY-005"
+      ],
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-01",
+      "is_demo_target": false
+    },
+    {
+      "key": "r2",
+      "demo": "Showcase a more intuitive and user-friendly interface for managing bookings.",
+      "goal": "Enhance the user interface and experience for salon owners.",
+      "name": "User Experience Improvements",
+      "week_end": 3,
+      "week_start": 3,
+      "story_ids": [
+        "STORY-002"
+      ],
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-01",
+      "is_demo_target": false
+    },
+    {
+      "key": "r3",
+      "demo": "Demonstrate faster booking processing and reliable system performance under load.",
+      "goal": "Optimize system performance and reliability.",
+      "name": "Performance Optimization",
+      "week_end": 4,
+      "week_start": 4,
+      "story_ids": [],
+      "starts_on": null,
+      "ends_on": null,
+      "is_demo_target": false
+    }
+  ],
+  "stories": [
+    {
+      "id": "STORY-001",
+      "title": "Create and verify a booking",
+      "release": "r0",
+      "fulfills": [
+        "REQ-001",
+        "REQ-002"
+      ],
+      "narrative": "As a salon owner, I want to create a booking and verify customer contact information, so that I can ensure accurate bookings.",
+      "acceptance": [
+        "Given a new booking request, When I enter customer contact information, Then the system verifies the information is correct.",
+        "Given incorrect contact information, When I try to confirm the booking, Then the system flags the error and prevents confirmation.",
+        "Trust: Given a booking creation, When contact info is verified, Then it is logged for audit."
+      ],
+      "blocked_by": [],
+      "owner_agent": "Salon Owner",
+      "failure_paths": [
+        "Invalid contact info",
+        "Network error during verification",
+        "UI form submission failure"
+      ],
+      "task_guidance": "Implement the booking creation form and integrate contact verification logic.",
+      "due_on": "2026-10-01",
+      "due_baseline_on": "2026-10-04"
+    },
+    {
+      "id": "STORY-002",
+      "title": "Flag uncertain bookings for review",
+      "release": "r2",
+      "fulfills": [
+        "REQ-003"
+      ],
+      "narrative": "As a booking manager, I want to flag uncertain bookings for review, so that they can be verified before confirmation.",
+      "acceptance": [
+        "Given a booking with missing information, when I review it, then it is flagged for further action.",
+        "Given a booking with all required information, when I review it, then it is not flagged.",
+        "Trust: Every flagged booking is recorded with a reason for the flag."
+      ],
+      "blocked_by": [
+        "STORY-001"
+      ],
+      "owner_agent": "Booking Manager",
+      "failure_paths": [
+        "Booking data is corrupted",
+        "Flagging system fails",
+        "Review interface crashes"
+      ],
+      "task_guidance": "Implement a flagging system in the booking review interface to mark uncertain bookings.",
+      "due_on": "2026-10-01",
+      "due_baseline_on": "2026-10-04"
+    },
+    {
+      "id": "STORY-003",
+      "title": "Review and approve prepared bookings",
+      "release": "r0",
+      "fulfills": [
+        "REQ-004"
+      ],
+      "narrative": "As a salon owner, I want to review all prepared bookings before they are sent, so that I can ensure accuracy.",
+      "acceptance": [
+        "Given prepared bookings, When I review them, Then I can approve or edit before sending.",
+        "Given a booking error, When I review, Then I can correct it before approval.",
+        "Trust: Given a booking review, When approved, Then the approval is logged."
+      ],
+      "blocked_by": [],
+      "owner_agent": "Salon Owner",
+      "failure_paths": [
+        "Review interface failure",
+        "Approval workflow error",
+        "Logging failure"
+      ],
+      "task_guidance": "Develop the booking review interface and approval workflow.",
+      "due_on": "2026-10-01",
+      "due_baseline_on": "2026-10-04"
+    },
+    {
+      "id": "STORY-004",
+      "title": "Send booking confirmations and update status",
+      "release": "r1",
+      "fulfills": [
+        "REQ-005",
+        "REQ-004"
+      ],
+      "narrative": "As a booking manager, I want to send booking confirmations and update the booking status, so that customers are informed and records are accurate.",
+      "acceptance": [
+        "Given a confirmed booking, when I send a confirmation, then the customer receives an email via Gmail.",
+        "Given a booking without an email address, when I attempt to send a confirmation, then I receive an error message.",
+        "Trust: Every sent confirmation is logged with a timestamp and booking ID."
+      ],
+      "blocked_by": [
+        "STORY-003"
+      ],
+      "owner_agent": "Booking Manager",
+      "failure_paths": [
+        "Email address is invalid",
+        "Gmail API is down",
+        "Booking status fails to update"
+      ],
+      "task_guidance": "Use the Gmail API to send confirmation emails and update the booking status in the database.",
+      "due_on": "2026-10-01",
+      "due_baseline_on": "2026-10-04"
+    },
+    {
+      "id": "STORY-005",
+      "title": "Enhance booking UI for better user experience",
+      "release": "r1",
+      "fulfills": [
+        "REQ-001"
+      ],
+      "narrative": "As a salon owner, I want an improved booking UI, so that I can manage bookings more efficiently.",
+      "acceptance": [
+        "Given the booking UI, When I use it, Then it is intuitive and user-friendly.",
+        "Given a UI error, When I encounter it, Then the system provides helpful feedback.",
+        "Trust: Given UI interactions, When completed, Then they are logged."
+      ],
+      "blocked_by": [
+        "STORY-004"
+      ],
+      "owner_agent": "Salon Owner",
+      "failure_paths": [
+        "UI rendering error",
+        "User input error",
+        "Feedback mechanism failure"
+      ],
+      "task_guidance": "Redesign the booking UI for better usability and feedback.",
+      "due_on": "2026-10-01",
+      "due_baseline_on": "2026-10-04"
+    }
+  ],
+  "agents": [],
+  "project": {
+    "name": "Hair Salon Booking Manager",
+    "descriptor": "A simple web-based booking management system for salon owners, integrating with Gmail for communication and ensuring correct customer contact information.",
+    "repo_url": "https://github.com/baidhani/Hair-Salon",
+    "plan_version": 1,
+    "plan_sha256": "621ed09d18948610b5118b1a4ec6f60e0f197b58fe9c6d57c2d58336fc2858cb"
+  },
+  "schedule": {
+    "build_start": "2026-10-01",
+    "build_end": "2026-10-01",
+    "demo_day": "2026-10-08",
+    "build_weeks": 1,
+    "demo_release_key": "r0",
+    "roadmap_release_keys": [
+      "r1",
+      "r2",
+      "r3"
+    ],
+    "prep": [
+      {
+        "key": "PREP-1",
+        "title": "Write the demo narrative: the problem, the one moment, the guardrail",
+        "due_on": "2026-10-02"
+      },
+      {
+        "key": "PREP-2",
+        "title": "Record a first run-through and watch it back",
+        "due_on": "2026-10-03"
+      },
+      {
+        "key": "PREP-3",
+        "title": "Build the slides — what it does, who for, the number it moves",
+        "due_on": "2026-10-05"
+      },
+      {
+        "key": "PREP-4",
+        "title": "Rehearse with one other person and take their notes",
+        "due_on": "2026-10-06"
+      },
+      {
+        "key": "PREP-5",
+        "title": "Record the final demo video",
+        "due_on": "2026-10-07"
+      },
+      {
+        "key": "PREP-6",
+        "title": "Present at Demo Day",
+        "due_on": "2026-10-08"
+      }
+    ]
+  },
+  "derived": {
+    "measures": [],
+    "guardrails": [],
+    "systems": [
+      "Gmail"
+    ],
+    "roles": [
+      "salon owner",
+      "booking manager"
+    ],
+    "counts": {
+      "requirements_total": 5,
+      "requirements_by_kind": {
+        "CONSTRAINT": 1,
+        "FUNC": 4
+      },
+      "stories_total": 5,
+      "releases_total": 4,
+      "agents_total": 0,
+      "failure_paths_total": 15,
+      "agents_by_autonomy": {}
+    }
+  }
+}

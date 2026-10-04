@@ -1,0 +1,254 @@
+{
+  "schema_version": 2,
+  "project": "Hair Salon Booking Manager",
+  "totals": {
+    "stories_total": 6,
+    "stories_verified": 0,
+    "stories_submitted": 0,
+    "stories_in_progress": 0,
+    "stories_not_started": 6,
+    "criteria_total": 20,
+    "criteria_passed": 0,
+    "points_awarded": 837
+  },
+  "stories": [
+    {
+      "id": "STORY-000",
+      "release": null,
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
+          "passed": false
+        },
+        {
+          "text": "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
+          "passed": false
+        },
+        {
+          "text": "Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
+          "passed": false
+        },
+        {
+          "text": "Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
+          "passed": false
+        },
+        {
+          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 5,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 187,
+        "outstanding": [
+          "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
+          "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
+          "Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
+          "Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
+          "Trust — no tab shows a number, a connection or a result the project has not actually produced."
+        ]
+      }
+    },
+    {
+      "id": "STORY-001",
+      "release": "r0",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a new booking request, When I enter customer contact information, Then the system verifies the information is correct.",
+          "passed": false
+        },
+        {
+          "text": "Given incorrect contact information, When I try to confirm the booking, Then the system flags the error and prevents confirmation.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Given a booking creation, When contact info is verified, Then it is logged for audit.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 130,
+        "outstanding": [
+          "Given a new booking request, When I enter customer contact information, Then the system verifies the information is correct.",
+          "Given incorrect contact information, When I try to confirm the booking, Then the system flags the error and prevents confirmation.",
+          "Trust: Given a booking creation, When contact info is verified, Then it is logged for audit."
+        ]
+      }
+    },
+    {
+      "id": "STORY-002",
+      "release": "r2",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a booking with missing information, when I review it, then it is flagged for further action.",
+          "passed": false
+        },
+        {
+          "text": "Given a booking with all required information, when I review it, then it is not flagged.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Every flagged booking is recorded with a reason for the flag.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 130,
+        "outstanding": [
+          "Given a booking with missing information, when I review it, then it is flagged for further action.",
+          "Given a booking with all required information, when I review it, then it is not flagged.",
+          "Trust: Every flagged booking is recorded with a reason for the flag."
+        ]
+      }
+    },
+    {
+      "id": "STORY-003",
+      "release": "r0",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given prepared bookings, When I review them, Then I can approve or edit before sending.",
+          "passed": false
+        },
+        {
+          "text": "Given a booking error, When I review, Then I can correct it before approval.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Given a booking review, When approved, Then the approval is logged.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 130,
+        "outstanding": [
+          "Given prepared bookings, When I review them, Then I can approve or edit before sending.",
+          "Given a booking error, When I review, Then I can correct it before approval.",
+          "Trust: Given a booking review, When approved, Then the approval is logged."
+        ]
+      }
+    },
+    {
+      "id": "STORY-004",
+      "release": "r1",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a confirmed booking, when I send a confirmation, then the customer receives an email via Gmail.",
+          "passed": false
+        },
+        {
+          "text": "Given a booking without an email address, when I attempt to send a confirmation, then I receive an error message.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Every sent confirmation is logged with a timestamp and booking ID.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 130,
+        "outstanding": [
+          "Given a confirmed booking, when I send a confirmation, then the customer receives an email via Gmail.",
+          "Given a booking without an email address, when I attempt to send a confirmation, then I receive an error message.",
+          "Trust: Every sent confirmation is logged with a timestamp and booking ID."
+        ]
+      }
+    },
+    {
+      "id": "STORY-005",
+      "release": "r1",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given the booking UI, When I use it, Then it is intuitive and user-friendly.",
+          "passed": false
+        },
+        {
+          "text": "Given a UI error, When I encounter it, Then the system provides helpful feedback.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Given UI interactions, When completed, Then they are logged.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 130,
+        "outstanding": [
+          "Given the booking UI, When I use it, Then it is intuitive and user-friendly.",
+          "Given a UI error, When I encounter it, Then the system provides helpful feedback.",
+          "Trust: Given UI interactions, When completed, Then they are logged."
+        ]
+      }
+    }
+  ]
+}
