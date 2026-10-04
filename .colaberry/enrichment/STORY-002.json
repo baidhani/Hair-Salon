@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1",
+  "projectId": "b2d8c0b3-23bb-4bc2-9851-078254bba1ff",
+  "storyId": "STORY-002",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-10-05T03:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "inputs",
+      "value": "A booking carries a service and a requested appointment date and time in addition to the customer's contact details.",
+      "evidence": "src/flag.js"
+    },
+    {
+      "dimension": "exceptions",
+      "value": "A booking is flagged for manual review when contact details, service or appointment time are missing, when its data cannot be read, or when another booking is within one hour of its requested time.",
+      "evidence": "tests/flag.test.js"
+    },
+    {
+      "dimension": "approval_points",
+      "value": "A flagged booking cannot be approved until the owner fixes the flagged details; approval and sending are therefore blocked for incomplete bookings.",
+      "evidence": "tests/review.test.js"
+    },
+    {
+      "dimension": "security_context",
+      "value": "Every flagged booking is recorded in the audit log with its reasons and a timestamp; the entries hold reason codes only, never contact details.",
+      "evidence": "src/audit.js"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Availability is treated as uncertain when a booking has no time or service, or overlaps another booking by less than one hour.",
+      "rationale": "The plan holds no availability or opening-hours data, so these are the only checkable signals; the one-hour appointment length is an assumption.",
+      "evidence": "src/flag.js#SLOT_MINUTES"
+    },
+    {
+      "statement": "If recording a flag fails, the booking stays flagged and blocked, and the log write is retried when the list is next read.",
+      "rationale": "A logging fault must never let an uncertain booking through.",
+      "evidence": "tests/review.test.js"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "The one-hour appointment length is an assumption, not taken from the plan, and there are no opening hours or stylist calendars, so true availability is never checked.",
+      "evidence": "src/flag.js#SLOT_MINUTES"
+    },
+    {
+      "statement": "An overlap flags only the booking added later; the earlier booking is not flagged retroactively.",
+      "evidence": "src/review.js"
+    },
+    {
+      "statement": "Flagging and the review page were verified by automated tests and a headless-browser load of the page; the save/approve click-through was not exercised in a real browser.",
+      "evidence": "tests/server.test.js"
+    }
+  ],
+  "demonstrationEvidence": [
+    { "kind": "test", "ref": "tests/flag.test.js" },
+    { "kind": "test", "ref": "tests/review.test.js" },
+    { "kind": "test", "ref": "tests/server.test.js" }
+  ],
+  "measurementEvents": []
+}

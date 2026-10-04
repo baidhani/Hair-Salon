@@ -13,7 +13,9 @@ async function withServer(opts, fn) {
   const url = 'http://localhost:' + server.address().port;
   try { await fn(url); } finally { server.close(); }
 }
-const post = (url, body, raw) => fetch(url + '/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: raw ?? JSON.stringify(body) });
+// Bookings default to a complete time and service; a test overrides them (or sets undefined) to get a flagged booking.
+const slotDefaults = { requestedAt: '2026-10-10T10:00:00Z', service: 'Haircut' };
+const post = (url, body, raw) => fetch(url + '/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: raw ?? JSON.stringify(body && body.contact ? { ...slotDefaults, ...body } : body) });
 
 test('201 for a valid booking', () => withServer({}, async url => {
   const res = await post(url, { requestId: 'a', contact: good });
@@ -179,4 +181,26 @@ test('serves the shared UI files, and nothing else from the public folder', () =
   assert.match((await fetch(url + '/ui.css')).headers.get('content-type'), /css/);
   assert.match((await fetch(url + '/ui.js')).headers.get('content-type'), /javascript/);
   assert.strictEqual((await fetch(url + '/server.js')).status, 404);
+}));
+
+// ---- STORY-002: flags over HTTP ----
+test('a booking without a time is prepared but flagged, listed with its reason, and cannot be approved', () => withReview({}, async (url, log) => {
+  const made = await (await post(url, { requestId: 'fl1', contact: good, requestedAt: undefined })).json();
+  assert.deepStrictEqual(made.flag, { flagged: true, reasons: ['missing_requested_time'] });
+  const list = await (await fetch(url + '/api/review')).json();
+  assert.deepStrictEqual(list.bookings[0].flag.reasons, ['missing_requested_time']);
+  assert.strictEqual((await send(url + '/api/review/' + made.booking.id + '/approve', 'POST')).status, 409);
+  assert.strictEqual(log.entries().filter(e => e.type === 'booking_flagged').length, 1);
+}));
+
+test('a complete booking is not flagged', () => withReview({}, async url => {
+  const made = await (await post(url, { requestId: 'fl2', contact: good })).json();
+  assert.strictEqual(made.flag.flagged, false);
+}));
+
+test('editing in the missing time over HTTP clears the flag', () => withReview({}, async url => {
+  const made = await (await post(url, { requestId: 'fl3', contact: good, requestedAt: undefined })).json();
+  const res = await send(url + '/api/review/' + made.booking.id, 'PATCH', { changes: { requestedAt: '2026-10-11T09:00:00Z' } });
+  assert.strictEqual((await res.json()).booking.flag.flagged, false);
+  assert.strictEqual((await send(url + '/api/review/' + made.booking.id + '/approve', 'POST')).status, 200);
 }));

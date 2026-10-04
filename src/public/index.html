@@ -26,6 +26,12 @@
     <label for="phone">Phone</label>
     <input id="phone" name="phone" type="tel" autocomplete="off" aria-describedby="e-phone">
     <div class="field-error" id="e-phone"></div>
+    <label for="service">Service</label>
+    <input id="service" name="service" autocomplete="off" aria-describedby="e-service">
+    <div class="field-error" id="e-service"></div>
+    <label for="requestedAt">Appointment date and time <span class="hint">(a booking without one is flagged for review)</span></label>
+    <input id="requestedAt" name="requestedAt" type="datetime-local" aria-describedby="e-requestedAt">
+    <div class="field-error" id="e-requestedAt"></div>
     <button class="primary" id="submit">Check details and prepare booking</button>
   </form>
 </main>
@@ -47,6 +53,14 @@ function showFieldErrors(errors) {
   if (first) first.focus();
 }
 
+// Contact details go in `contact`; the appointment details sit beside it. A blank time is sent as missing, not as an empty string.
+function bookingBody() {
+  const all = Object.fromEntries(new FormData(f));
+  const { service, requestedAt, ...contact } = all;
+  const when = requestedAt ? new Date(requestedAt).toISOString() : undefined;
+  return { requestId, contact, service: service.trim() || undefined, requestedAt: when };
+}
+
 f.addEventListener('submit', async e => {
   e.preventDefault();
   showFieldErrors([]);
@@ -54,9 +68,10 @@ f.addEventListener('submit', async e => {
   UI.notify('info', 'Checking the details…');
   UI.logEvent('booking_form_submitted');
   try {
-    const { status, data } = await UI.request('POST', '/bookings', { requestId, contact: Object.fromEntries(new FormData(f)) });
+    const { status, data } = await UI.request('POST', '/bookings', bookingBody());
     if (data.status === 'confirmed') {
-      UI.notify('success', 'Details verified for ' + data.booking.name + '. The booking is waiting for your review — nothing has been emailed yet.');
+      UI.notify(data.flag && data.flag.flagged ? 'info' : 'success', 'Details verified for ' + data.booking.name + '. The booking is waiting for your review' +
+        (data.flag && data.flag.flagged ? ' and has been flagged — open Review & send to see why' : '') + ' — nothing has been emailed yet.');
       f.reset(); requestId = crypto.randomUUID();
     } else if (data.status === 'rejected') {
       showFieldErrors(data.errors);

@@ -57,6 +57,18 @@ function createAuditLog({ file, now = () => new Date() } = {}) {
     return entry;
   }
 
+  // One entry per flagged booking and set of reasons. Reasons come from a fixed list, so no personal data is stored.
+  function recordFlag({ bookingId, reasons }) {
+    if (!bookingId || !Array.isArray(reasons) || !reasons.length) throw new Error('bookingId and reasons are required');
+    const key = 'flag:' + bookingId + ':' + reasons.join(',');
+    if (seen.has(key)) return entries.find(e => e.requestId === key);
+    const entry = { requestId: key, type: 'booking_flagged', bookingId, reasons, at: now().toISOString() };
+    if (file) fs.appendFileSync(file, JSON.stringify(entry) + '\n');
+    entries.push(entry);
+    seen.add(key);
+    return entry;
+  }
+
   // One entry per UI interaction. Only the event name and an optional booking id are kept, never contact details.
   // Unlike the entries above these are not deduplicated: each interaction really happened.
   function recordUiEvent({ event, bookingId }) {
@@ -69,7 +81,7 @@ function createAuditLog({ file, now = () => new Date() } = {}) {
     return entry;
   }
 
-  return { record, recordApproval, recordSend, recordUiEvent, entries: () => entries.slice() };
+  return { record, recordApproval, recordSend, recordFlag, recordUiEvent, entries: () => entries.slice() };
 }
 
 module.exports = { createAuditLog };

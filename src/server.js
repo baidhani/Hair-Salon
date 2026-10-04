@@ -44,7 +44,7 @@ async function reviewApi(req, res, review, confirmer) {
     const id = decodeURIComponent(parts[2] || '');
     if (req.method === 'POST' && parts[3] === 'approve' && parts.length === 4) {
       const r = review.approve(id, { approvedBy: OWNER });
-      return send(res, { approved: 200, not_found: 404, error: 500 }[r.status], r);
+      return send(res, { approved: 200, not_found: 404, flagged: 409, error: 500 }[r.status], r);
     }
     if (req.method === 'POST' && parts[3] === 'send' && parts.length === 4) {
       if (!confirmer) return send(res, 503, { status: 'not_configured', message: 'Gmail is not configured, so nothing was sent.' });
@@ -100,7 +100,10 @@ function createServer(bookings, review, confirmer, log) {
         return send(res, 400, { status: 'bad_request', message: 'requestId is required.' });
       }
       const r = await bookings.createBooking(body.contact, { requestId: body.requestId });
-      if (r.status === 'confirmed' && review) review.prepare({ id: r.booking.id, contact: body.contact });
+      if (r.status === 'confirmed' && review) {
+        const prepared = review.prepare({ id: r.booking.id, contact: body.contact, requestedAt: body.requestedAt, service: body.service });
+        r.flag = prepared.flag;
+      }
       return send(res, { confirmed: 201, rejected: 400, error: 502 }[r.status], r);
     }
     send(res, 404, { status: 'not_found' });

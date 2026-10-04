@@ -95,15 +95,15 @@
       "criteria": [
         {
           "text": "Given a booking with missing information, when I review it, then it is flagged for further action.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a booking with all required information, when I review it, then it is not flagged.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Every flagged booking is recorded with a reason for the flag.",
-          "passed": false
+          "passed": true
         }
       ],
       "files_touched": [],

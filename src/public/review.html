@@ -25,7 +25,20 @@
 <script>
 UI.installErrorHandler();
 const listEl = document.getElementById('list'), approvedEl = document.getElementById('approved');
-const FIELDS = [['name', 'Name'], ['email', 'Email'], ['phone', 'Phone']];
+const FIELDS = [['name', 'Name'], ['email', 'Email'], ['phone', 'Phone'], ['service', 'Service']];
+const REASONS = {
+  corrupted_data: 'Some of the booking data could not be read. Please re-enter the details.',
+  missing_contact: 'Name, email or phone is missing.',
+  missing_requested_time: 'No appointment time was given.',
+  missing_service: 'No service was given.',
+  overlaps_existing: 'Another booking is within an hour of this time, so availability is uncertain.',
+};
+// The date field wants local time as YYYY-MM-DDTHH:mm; bookings store an ISO time.
+const toLocalInput = iso => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+const when = iso => (Number.isNaN(new Date(iso).getTime()) ? 'no time given' : new Date(iso).toLocaleString());
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 async function load() {
@@ -33,15 +46,25 @@ async function load() {
     const { ok, data } = await UI.request('GET', '/api/review');
     if (!ok) throw new Error('The list could not be loaded. Nothing was changed — please refresh the page.');
     listEl.innerHTML = data.bookings.length ? data.bookings.map(b => `<div class="card" data-id="${esc(b.id)}">
-      <span class="badge prepared">Waiting for review</span>
+      ${b.flag.flagged
+        ? `<span class="badge flagged">Flagged for review</span>
+           <ul class="reasons">${b.flag.reasons.map(r => `<li>${esc(REASONS[r] || r)}</li>`).join('')}</ul>
+           <p class="hint">Fix the details below and save. A flagged booking cannot be approved until then.</p>
+           ${b.flagLogFailed ? '<p class="field-error">This flag could not be recorded yet. It will be retried automatically.</p>' : ''}`
+        : '<span class="badge prepared">Waiting for review</span>'}
       ${FIELDS.map(([k, l]) => `<label for="${esc(b.id)}-${k}">${l}</label>
-        <input id="${esc(b.id)}-${k}" name="${k}" value="${esc(b.contact[k])}" aria-describedby="${esc(b.id)}-e-${k}">
+        <input id="${esc(b.id)}-${k}" name="${k}" value="${esc(b.contact[k] ?? b[k])}" aria-describedby="${esc(b.id)}-e-${k}">
         <div class="field-error" id="${esc(b.id)}-e-${k}"></div>`).join('')}
-      <button data-act="save">Save changes</button><button class="primary" data-act="approve">Approve</button>
+      <label for="${esc(b.id)}-requestedAt">Appointment date and time</label>
+      <input id="${esc(b.id)}-requestedAt" name="requestedAt" type="datetime-local" value="${esc(toLocalInput(b.requestedAt))}">
+      <div class="field-error" id="${esc(b.id)}-e-requestedAt"></div>
+      <button data-act="save">Save changes</button>
+      <button class="primary" data-act="approve" ${b.flag.flagged ? 'disabled aria-disabled="true"' : ''}>Approve</button>
       <span class="note" role="status"></span></div>`).join('')
       : '<p class="empty">Nothing is waiting for review. New bookings appear here after their details are checked.</p>';
     approvedEl.innerHTML = data.approved.length ? data.approved.map(b => `<div class="card" data-id="${esc(b.id)}">
       <span class="badge approved">Approved</span> <strong>${esc(b.contact.name)}</strong> · ${esc(b.contact.email)}<br>
+      <span class="hint">${esc(b.service)} · ${esc(when(b.requestedAt))}</span><br>
       <button class="primary" data-act="send">Send confirmation</button><span class="note" role="status"></span></div>`).join('')
       : '<p class="empty">Nothing approved yet. Approve a booking above and it will appear here.</p>';
   } catch (err) {
@@ -63,10 +86,16 @@ async function act(button) {
     if (kind === 'save') {
       UI.logEvent('booking_edited', id);
       const changes = Object.fromEntries([...card.querySelectorAll('input')].map(i => [i.name, i.value]));
+      // A blank time stays blank (it will be flagged); a chosen one goes to the server as an ISO time.
+      changes.requestedAt = changes.requestedAt ? new Date(changes.requestedAt).toISOString() : '';
       const { data } = await UI.request('PATCH', url, { changes });
-      if (data.status === 'prepared') { UI.notify('success', 'Changes saved.'); }
+      if (data.status === 'prepared') {
+        await load();
+        UI.notify(data.booking.flag.flagged ? 'info' : 'success',
+          data.booking.flag.flagged ? 'Changes saved, but the booking is still flagged — see the reasons on the card.' : 'Changes saved. The booking is no longer flagged and can be approved.');
+      }
       else if (data.status === 'rejected') {
-        data.errors.forEach(x => { card.querySelector('[id$="-e-' + x.field + '"]').textContent = x.message; });
+        data.errors.forEach(x => { const slot = card.querySelector('[id$="-e-' + x.field + '"]'); if (slot) slot.textContent = x.message; });
         UI.notify('error', 'Not saved — please correct the highlighted details.');
       } else UI.notify('error', data.message || 'The changes could not be saved. Nothing was changed.');
     } else if (kind === 'approve') {

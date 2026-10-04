@@ -27,5 +27,7 @@ button:disabled{opacity:.6;cursor:progress}
 .badge{display:inline-block;padding:.1rem .6rem;border-radius:999px;font-size:.8rem;font-weight:600}
 .badge.prepared{background:var(--warnbg);color:var(--warn)}
 .badge.approved{background:#e3ecff;color:#1d3f9e}
+.badge.flagged{background:var(--errbg);color:var(--err)}
+.reasons{margin:.4rem 0;padding-left:1.2rem;color:var(--err)}
 .badge.sent{background:var(--okbg);color:var(--ok)}
 .empty{color:var(--muted);text-align:center;padding:1rem}

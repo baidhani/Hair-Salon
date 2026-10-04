@@ -10,7 +10,7 @@ function setup({ mailer, log = createAuditLog(), approve = true, c = contact } =
   const sent = [];
   const fake = mailer || { send: async m => { sent.push(m); } };
   const review = createReview({ log });
-  review.prepare({ id: 'b1', contact: c });
+  review.prepare({ id: 'b1', contact: c, requestedAt: '2026-10-10T10:00:00Z', service: 'Haircut' });
   if (approve) review.approve('b1', { approvedBy: 'owner' });
   return { sent, log, review, confirmer: createConfirmer({ review, mailer: fake, log }) };
 }
@@ -35,10 +35,20 @@ test('refuses to send before the owner approves', async () => {
 });
 
 test('a booking without a valid email gets an error and nothing is sent', async () => {
-  const { sent, confirmer } = setup({ c: { ...contact, email: '' } });
+  // The review store now blocks such a booking earlier (it is flagged), so test the sender's own check directly.
+  const sent = [];
+  const stub = { get: () => ({ id: 'b1', status: 'approved', contact: { ...contact, email: '' } }), markSent() { throw new Error('must not be called'); } };
+  const confirmer = createConfirmer({ review: stub, mailer: { send: async m => { sent.push(m); } }, log: createAuditLog() });
   const r = await confirmer.sendConfirmation('b1');
   assert.strictEqual(r.status, 'invalid_email');
   assert.match(r.message, /email/);
+  assert.strictEqual(sent.length, 0);
+});
+
+test('a booking with a blank email is flagged, so it can never be approved or sent', async () => {
+  const { sent, confirmer } = setup({ c: { ...contact, email: '' } });
+  const r = await confirmer.sendConfirmation('b1');
+  assert.strictEqual(r.status, 'not_approved');
   assert.strictEqual(sent.length, 0);
 });
 
