@@ -32,7 +32,19 @@ function createAuditLog({ file, now = () => new Date() } = {}) {
     return entry;
   }
 
-  return { record, entries: () => entries.slice() };
+  // Owner approvals share the same log, keyed 'approval:<bookingId>' so approving twice logs once.
+  function recordApproval({ bookingId, approvedBy }) {
+    if (!bookingId || !approvedBy) throw new Error('bookingId and approvedBy are required');
+    const key = 'approval:' + bookingId;
+    if (seen.has(key)) return entries.find(e => e.requestId === key);
+    const entry = { requestId: key, type: 'approval', bookingId, approvedBy, at: now().toISOString() };
+    if (file) fs.appendFileSync(file, JSON.stringify(entry) + '\n');
+    entries.push(entry);
+    seen.add(key);
+    return entry;
+  }
+
+  return { record, recordApproval, entries: () => entries.slice() };
 }
 
 module.exports = { createAuditLog };

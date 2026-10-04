@@ -133,11 +133,11 @@
       "criteria": [
         {
           "text": "Given prepared bookings, When I review them, Then I can approve or edit before sending.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a booking error, When I review, Then I can correct it before approval.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Given a booking review, When approved, Then the approval is logged.",

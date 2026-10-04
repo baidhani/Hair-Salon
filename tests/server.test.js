@@ -41,3 +41,48 @@ test('serves the booking form', () => withServer({}, async url => {
   assert.strictEqual(res.status, 200);
   assert.match(await res.text(), /New booking/);
 }));
+
+// ---- STORY-003: review and approval ----
+const { createReview } = require('../src/review');
+
+async function withReview(opts, fn) {
+  const log = opts.log || createAuditLog();
+  const server = createServer(createBookings({ log }), createReview({ log, ...(opts.review || {}) }));
+  await new Promise(r => server.listen(0, r));
+  const url = 'http://localhost:' + server.address().port;
+  try { await fn(url, log); } finally { server.close(); }
+}
+const send = (url, method, body) => fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body && JSON.stringify(body) });
+
+test('a verified booking appears for review, can be corrected, approved and the approval is logged', () => withReview({}, async (url, log) => {
+  const made = await (await post(url, { requestId: 'r1', contact: good })).json();
+  let list = await (await fetch(url + '/api/review')).json();
+  assert.strictEqual(list.bookings.length, 1);
+
+  const bad = await send(url + '/api/review/' + made.booking.id, 'PATCH', { changes: { email: 'bad' } });
+  assert.strictEqual(bad.status, 400);
+  const fixed = await send(url + '/api/review/' + made.booking.id, 'PATCH', { changes: { phone: '555 000 1111' } });
+  assert.strictEqual(fixed.status, 200);
+
+  const ok = await send(url + '/api/review/' + made.booking.id + '/approve', 'POST');
+  assert.strictEqual(ok.status, 200);
+  assert.strictEqual(log.entries().filter(e => e.type === 'approval').length, 1);
+  list = await (await fetch(url + '/api/review')).json();
+  assert.strictEqual(list.bookings.length, 0);
+}));
+
+test('a rejected booking never reaches review', () => withReview({}, async url => {
+  await post(url, { requestId: 'r2', contact: { ...good, email: 'x' } });
+  assert.strictEqual((await (await fetch(url + '/api/review')).json()).bookings.length, 0);
+}));
+
+test('approval returns 500 and stays prepared when logging fails', () => withReview({ review: { log: { recordApproval() { throw new Error('disk'); } } } }, async url => {
+  const made = await (await post(url, { requestId: 'r3', contact: good })).json();
+  assert.strictEqual((await send(url + '/api/review/' + made.booking.id + '/approve', 'POST')).status, 500);
+  assert.strictEqual((await (await fetch(url + '/api/review')).json()).bookings.length, 1);
+}));
+
+test('unknown booking is 404; review page is served', () => withReview({}, async url => {
+  assert.strictEqual((await send(url + '/api/review/nope/approve', 'POST')).status, 404);
+  assert.match(await (await fetch(url + '/review')).text(), /Review prepared bookings/);
+}));
