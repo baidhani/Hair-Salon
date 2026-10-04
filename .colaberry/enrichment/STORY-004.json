@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1",
+  "projectId": "b2d8c0b3-23bb-4bc2-9851-078254bba1ff",
+  "storyId": "STORY-004",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-10-05T01:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "integrations",
+      "value": "Confirmation emails are sent through the Gmail API using an OAuth refresh token read from environment variables.",
+      "evidence": "src/gmail.js"
+    },
+    {
+      "dimension": "approval_points",
+      "value": "A confirmation can only be sent for a booking the owner has approved.",
+      "evidence": "tests/confirm.test.js"
+    },
+    {
+      "dimension": "security_context",
+      "value": "Each sent confirmation is logged with a booking id and timestamp; the audit log does not store the customer's email address.",
+      "evidence": "src/audit.js"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "A send that times out or drops the connection is not retried; only 429/5xx answers from Gmail are retried, up to 2 times.",
+      "rationale": "Gmail may have accepted the message, and a retry could email the customer twice.",
+      "evidence": "src/gmail.js"
+    },
+    {
+      "statement": "A booking is marked sent before the audit entry is written, and a failed log write is retried on the next call.",
+      "rationale": "A logging failure must never cause a second email.",
+      "evidence": "tests/confirm.test.js"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "The Gmail adapter has only been tested against a fake HTTP layer; no real email has been sent because no Gmail credentials were available.",
+      "evidence": "tests/gmail.test.js"
+    },
+    {
+      "statement": "There is no database: booking status is held in memory and lost on restart; only the audit log is persisted.",
+      "evidence": "src/review.js"
+    },
+    {
+      "statement": "An ambiguous send failure (timeout) is shown as an error even if Gmail delivered the email.",
+      "evidence": "src/gmail.js"
+    }
+  ],
+  "demonstrationEvidence": [
+    { "kind": "test", "ref": "tests/confirm.test.js" },
+    { "kind": "test", "ref": "tests/gmail.test.js" },
+    { "kind": "test", "ref": "tests/server.test.js" }
+  ],
+  "measurementEvents": []
+}

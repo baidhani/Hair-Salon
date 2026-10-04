@@ -28,8 +28,8 @@ the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in
 step (see the managed block in CLAUDE.md). Ticking something you have not
 actually met only misleads you.
 
-- [ ] Given a confirmed booking, when I send a confirmation, then the customer receives an email via Gmail.
-- [ ] Given a booking without an email address, when I attempt to send a confirmation, then I receive an error message.
-- [ ] Trust: Every sent confirmation is logged with a timestamp and booking ID.
+- [x] Given a confirmed booking, when I send a confirmation, then the customer receives an email via Gmail.
+- [x] Given a booking without an email address, when I attempt to send a confirmation, then I receive an error message.
+- [x] Trust: Every sent confirmation is logged with a timestamp and booking ID.
 
 When every box above is ticked, stop and show the demo.

@@ -86,3 +86,50 @@ test('unknown booking is 404; review page is served', () => withReview({}, async
   assert.strictEqual((await send(url + '/api/review/nope/approve', 'POST')).status, 404);
   assert.match(await (await fetch(url + '/review')).text(), /Review prepared bookings/);
 }));
+
+// ---- STORY-004: sending confirmations ----
+const { createConfirmer } = require('../src/confirm');
+
+async function withSender(mailer, fn) {
+  const log = createAuditLog();
+  const review = createReview({ log });
+  const confirmer = mailer ? createConfirmer({ review, mailer, log }) : null;
+  const server = createServer(createBookings({ log }), review, confirmer);
+  await new Promise(r => server.listen(0, r));
+  const url = 'http://localhost:' + server.address().port;
+  try { await fn(url, log); } finally { server.close(); }
+}
+async function approved(url, contact = good, requestId = 'q1') {
+  const made = await (await post(url, { requestId, contact })).json();
+  await send(url + '/api/review/' + made.booking.id + '/approve', 'POST');
+  return made.booking.id;
+}
+
+test('sends a confirmation for an approved booking and logs it', () => {
+  const sent = [];
+  return withSender({ send: async m => { sent.push(m); } }, async (url, log) => {
+    const id = await approved(url);
+    assert.strictEqual((await send(url + '/api/review/' + id + '/send', 'POST')).status, 200);
+    assert.strictEqual(sent.length, 1);
+    assert.strictEqual(log.entries().filter(e => e.type === 'confirmation_sent').length, 1);
+    assert.strictEqual((await (await fetch(url + '/api/review')).json()).approved.length, 0);
+  });
+});
+
+test('409 when the booking is not approved yet', () => withSender({ send: async () => {} }, async url => {
+  const made = await (await post(url, { requestId: 'q2', contact: good })).json();
+  assert.strictEqual((await send(url + '/api/review/' + made.booking.id + '/send', 'POST')).status, 409);
+}));
+
+test('502 and still approved when Gmail is down', () => withSender({ send: async () => { throw new Error('down'); } }, async url => {
+  const id = await approved(url, good, 'q3');
+  assert.strictEqual((await send(url + '/api/review/' + id + '/send', 'POST')).status, 502);
+  assert.strictEqual((await (await fetch(url + '/api/review')).json()).approved.length, 1);
+}));
+
+test('503 with a clear message when Gmail is not configured', () => withSender(null, async url => {
+  const id = await approved(url, good, 'q4');
+  const res = await send(url + '/api/review/' + id + '/send', 'POST');
+  assert.strictEqual(res.status, 503);
+  assert.match((await res.json()).message, /not configured/);
+}));

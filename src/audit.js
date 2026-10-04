@@ -44,7 +44,19 @@ function createAuditLog({ file, now = () => new Date() } = {}) {
     return entry;
   }
 
-  return { record, recordApproval, entries: () => entries.slice() };
+  // One entry per sent confirmation: booking id and timestamp only, never the customer's email address.
+  function recordSend({ bookingId }) {
+    if (!bookingId) throw new Error('bookingId is required');
+    const key = 'send:' + bookingId;
+    if (seen.has(key)) return entries.find(e => e.requestId === key);
+    const entry = { requestId: key, type: 'confirmation_sent', bookingId, at: now().toISOString() };
+    if (file) fs.appendFileSync(file, JSON.stringify(entry) + '\n');
+    entries.push(entry);
+    seen.add(key);
+    return entry;
+  }
+
+  return { record, recordApproval, recordSend, entries: () => entries.slice() };
 }
 
 module.exports = { createAuditLog };

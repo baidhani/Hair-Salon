@@ -167,15 +167,15 @@
       "criteria": [
         {
           "text": "Given a confirmed booking, when I send a confirmation, then the customer receives an email via Gmail.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a booking without an email address, when I attempt to send a confirmation, then I receive an error message.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Every sent confirmation is logged with a timestamp and booking ID.",
-          "passed": false
+          "passed": true
         }
       ],
       "files_touched": [],

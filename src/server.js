@@ -5,6 +5,8 @@ const path = require('node:path');
 const { createBookings } = require('./bookings');
 const { createAuditLog } = require('./audit');
 const { createReview } = require('./review');
+const { createConfirmer } = require('./confirm');
+const { createGmailMailer } = require('./gmail');
 
 const MAX_BODY = 10 * 1024;
 const send = (res, code, body) => {
@@ -31,15 +33,20 @@ const page = (res, name) => {
 // No login yet: the brief names a single salon owner, so approvals are recorded as this label.
 const OWNER = 'owner';
 
-async function reviewApi(req, res, review) {
+async function reviewApi(req, res, review, confirmer) {
   if (!review) return send(res, 404, { status: 'not_found' });
   const parts = req.url.split('?')[0].split('/').filter(Boolean); // ['api','review',id?,'approve'?]
   try {
-    if (req.method === 'GET' && parts.length === 2) return send(res, 200, { bookings: review.listPrepared() });
+    if (req.method === 'GET' && parts.length === 2) return send(res, 200, { bookings: review.listPrepared(), approved: review.listByStatus('approved') });
     const id = decodeURIComponent(parts[2] || '');
     if (req.method === 'POST' && parts[3] === 'approve' && parts.length === 4) {
       const r = review.approve(id, { approvedBy: OWNER });
       return send(res, { approved: 200, not_found: 404, error: 500 }[r.status], r);
+    }
+    if (req.method === 'POST' && parts[3] === 'send' && parts.length === 4) {
+      if (!confirmer) return send(res, 503, { status: 'not_configured', message: 'Gmail is not configured, so nothing was sent.' });
+      const r = await confirmer.sendConfirmation(id);
+      return send(res, { sent: 200, not_found: 404, not_approved: 409, invalid_email: 400, mail_error: 502 }[r.status], r);
     }
     if (req.method === 'PATCH' && parts.length === 3) {
       let body;
@@ -51,11 +58,11 @@ async function reviewApi(req, res, review) {
   send(res, 404, { status: 'not_found' });
 }
 
-function createServer(bookings, review) {
+function createServer(bookings, review, confirmer) {
   return http.createServer(async (req, res) => {
     if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) return page(res, 'index.html');
     if (req.method === 'GET' && (req.url === '/review' || req.url === '/review.html')) return page(res, 'review.html');
-    if (req.url.startsWith('/api/review')) return reviewApi(req, res, review);
+    if (req.url.startsWith('/api/review')) return reviewApi(req, res, review, confirmer);
     if (req.method === 'POST' && req.url === '/bookings') {
       let body;
       try { body = await readJSON(req); } catch { return send(res, 400, { status: 'bad_request', message: 'Invalid request.' }); }
@@ -76,8 +83,14 @@ if (require.main === module) {
   const log = createAuditLog({ file });
   const bookings = createBookings({ log });
   const review = createReview({ log });
+  let confirmer = null;
+  try {
+    confirmer = createConfirmer({ review, mailer: createGmailMailer(), log });
+  } catch (err) {
+    console.warn(err.message + ' — confirmations cannot be sent until it is set.');
+  }
   const port = process.env.PORT || 3000;
-  createServer(bookings, review).listen(port, () => console.log(`Booking manager on http://localhost:${port}`));
+  createServer(bookings, review, confirmer).listen(port, () => console.log(`Booking manager on http://localhost:${port}`));
 }
 
 module.exports = { createServer };

@@ -16,9 +16,11 @@
 <p>Nothing is sent until you approve it.</p>
 <p id="top" role="status"></p>
 <div id="list"></div>
+<h2>Approved — ready to send</h2>
+<div id="approved"></div>
 <p><a href="/">← New booking</a></p>
 <script>
-const list = document.getElementById('list'), top = document.getElementById('top');
+const list = document.getElementById('list'), approvedEl = document.getElementById('approved'), topMsg = document.getElementById('top');
 const FIELDS = [['name', 'Name'], ['email', 'Email'], ['phone', 'Phone']];
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const say = (el, cls, text) => { el.className = cls; el.textContent = text; };
@@ -29,22 +31,29 @@ async function call(method, url, body) {
 }
 
 async function load() {
-  say(top, '', 'Loading…');
+  say(topMsg, '', 'Loading…');
   try {
-    const { bookings } = await call('GET', '/api/review');
-    say(top, '', bookings.length ? '' : 'No prepared bookings waiting for review.');
+    const { bookings, approved } = await call('GET', '/api/review');
+    approvedEl.innerHTML = approved.length ? approved.map(b => `<div class="b" data-id="${esc(b.id)}">
+      <strong>${esc(b.contact.name)}</strong> · ${esc(b.contact.email) || 'no email address'}<br>
+      <button data-act="send">Send confirmation</button><span class="note" role="status"></span></div>`).join('') : '<p>Nothing approved and waiting to be sent.</p>';
+    say(topMsg, '', bookings.length ? '' : 'No prepared bookings waiting for review.');
     list.innerHTML = bookings.map(b => `<div class="b" data-id="${esc(b.id)}">
       ${FIELDS.map(([k, l]) => `<label>${l} <input name="${k}" value="${esc(b.contact[k])}"></label><div class="err" data-for="${k}"></div>`).join('')}
       <button data-act="save">Save changes</button><button data-act="approve">Approve</button><span class="note" role="status"></span></div>`).join('');
-  } catch { say(top, 'err', 'Could not load the bookings. Nothing was changed — please refresh.'); }
+  } catch { say(topMsg, 'err', 'Could not load the bookings. Nothing was changed — please refresh.'); }
 }
 
-list.addEventListener('click', async e => {
+document.addEventListener('click', async e => {
   const act = e.target.dataset.act; if (!act) return;
   const box = e.target.closest('.b'), id = box.dataset.id, note = box.querySelector('.note');
   box.querySelectorAll('.err').forEach(d => { d.textContent = ''; });
   try {
-    if (act === 'save') {
+    if (act === 'send') {
+      const r = await call('POST', '/api/review/' + encodeURIComponent(id) + '/send');
+      if (r.status === 'sent') { box.innerHTML = '<strong>Confirmation sent.</strong>' + (r.logged === false ? ' (The log entry will be retried.)' : ''); }
+      else say(note, 'err', r.message || 'Could not send. The booking is still approved.');
+    } else if (act === 'save') {
       const changes = Object.fromEntries([...box.querySelectorAll('input')].map(i => [i.name, i.value]));
       const r = await call('PATCH', '/api/review/' + encodeURIComponent(id), { changes });
       if (r.status === 'prepared') say(note, 'ok', 'Saved.');
@@ -54,7 +63,7 @@ list.addEventListener('click', async e => {
       } else say(note, 'err', r.message || 'Could not save.');
     } else {
       const r = await call('POST', '/api/review/' + encodeURIComponent(id) + '/approve');
-      if (r.status === 'approved') { box.remove(); say(top, 'ok', 'Approved.'); }
+      if (r.status === 'approved') { say(topMsg, 'ok', 'Approved.'); await load(); say(topMsg, 'ok', 'Approved. It is now listed below, ready to send.'); }
       else say(note, 'err', r.message || 'Could not approve. The booking is still waiting.');
     }
   } catch { say(note, 'err', 'Could not reach the server. Nothing was changed.'); }

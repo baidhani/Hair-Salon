@@ -2,7 +2,7 @@
 const { verifyContact } = require('./verify');
 
 // Holds prepared bookings until the salon owner approves them. Nothing is sent from here (that is STORY-004).
-// States: prepared -> approved. Edits are only allowed while prepared, and must pass contact verification again.
+// States: prepared -> approved -> sent (sent is set by the confirmation sender, STORY-004). Edits are only allowed while prepared, and must pass contact verification again.
 function createReview({ verify = verifyContact, log }) {
   const bookings = new Map();
   const view = b => ({ id: b.id, contact: { ...b.contact }, status: b.status });
@@ -14,7 +14,8 @@ function createReview({ verify = verifyContact, log }) {
     return view(bookings.get(id));
   }
 
-  const listPrepared = () => [...bookings.values()].filter(b => b.status === 'prepared').map(view);
+  const listByStatus = status => [...bookings.values()].filter(b => b.status === status).map(view);
+  const listPrepared = () => listByStatus('prepared');
 
   async function edit(id, changes) {
     const b = bookings.get(id);
@@ -38,7 +39,18 @@ function createReview({ verify = verifyContact, log }) {
     return { status: 'approved', booking: view(b) };
   }
 
-  return { prepare, listPrepared, edit, approve };
+  const get = id => (bookings.has(id) ? view(bookings.get(id)) : null);
+
+  // Only an approved booking can become sent; marking an already-sent booking again changes nothing.
+  function markSent(id) {
+    const b = bookings.get(id);
+    if (!b) return { status: 'not_found' };
+    if (b.status === 'prepared') return { status: 'not_approved' };
+    b.status = 'sent';
+    return { status: 'sent', booking: view(b) };
+  }
+
+  return { prepare, listPrepared, listByStatus, edit, approve, get, markSent };
 }
 
 module.exports = { createReview };
