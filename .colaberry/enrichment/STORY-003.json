@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1",
+  "projectId": "b2d8c0b3-23bb-4bc2-9851-078254bba1ff",
+  "storyId": "STORY-003",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-10-05T00:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "approval_points",
+      "value": "A verified booking is held as prepared until the salon owner approves it; the owner can edit its contact details first, and edits are re-verified.",
+      "evidence": "src/review.js"
+    },
+    {
+      "dimension": "security_context",
+      "value": "Each approval is written to the audit log before the booking is marked approved; if logging fails the approval is refused.",
+      "evidence": "tests/review.test.js"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Approvals are recorded as the fixed label 'owner', set on the server, because there is no login and the plan names one salon owner.",
+      "rationale": "Authentication was not in scope for this story.",
+      "evidence": "src/server.js"
+    },
+    {
+      "statement": "Approving the same booking twice is a no-op and logs once.",
+      "rationale": "Side effects must be idempotent.",
+      "evidence": "tests/review.test.js"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Prepared bookings are held in memory and are lost on restart; only the audit log is persisted.",
+      "evidence": "src/review.js"
+    },
+    {
+      "statement": "Nothing is sent after approval; sending confirmations through Gmail is not built yet.",
+      "evidence": "src/review.js"
+    }
+  ],
+  "demonstrationEvidence": [
+    { "kind": "test", "ref": "tests/review.test.js" },
+    { "kind": "test", "ref": "tests/server.test.js" }
+  ],
+  "measurementEvents": []
+}

@@ -29,6 +29,6 @@ actually met only misleads you.
 
 - [x] Given prepared bookings, When I review them, Then I can approve or edit before sending.
 - [x] Given a booking error, When I review, Then I can correct it before approval.
-- [ ] Trust: Given a booking review, When approved, Then the approval is logged.
+- [x] Trust: Given a booking review, When approved, Then the approval is logged.
 
 When every box above is ticked, stop and show the demo.

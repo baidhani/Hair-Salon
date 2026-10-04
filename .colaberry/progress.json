@@ -141,7 +141,7 @@
         },
         {
           "text": "Trust: Given a booking review, When approved, Then the approval is logged.",
-          "passed": false
+          "passed": true
         }
       ],
       "files_touched": [],
